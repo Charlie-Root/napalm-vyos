@@ -25,9 +25,6 @@ import re
 import tempfile
 
 import vyattaconfparser
-from django.core.cache import cache
-
-cache.clear()
 
 # NAPALM base
 import napalm.base.constants as C
@@ -39,9 +36,6 @@ from napalm.base.exceptions import (
     ReplaceConfigException,
 )
 from netmiko import ConnectHandler, SCPConn, __version__ as netmiko_version
-
-logger = logging.getLogger("peering.manager.peering")
-
 
 class VyOSDriver(NetworkDriver):
 
@@ -452,16 +446,14 @@ class VyOSDriver(NetworkDriver):
         192.168.1.3     4 64521    7132    7103        0    0    0 4d21h05m        0
         192.168.1.4     4 64522       0       0        0    0    0 never    Active
         """
-        logger.warning("GET BGP PEERS")
         output = self.device.send_command("show ip bgp summary")
         output = output.split("\n")
-        logger.warning(output[2])
+
         match = re.search(
             r".* router identifier (\d+\.\d+\.\d+\.\d+), local AS number (\d+)",
             output[2],
         )
         if not match:
-            logger.warning("BGP neighbor parsing failed")
             return {}
         router_id = match[1]
         local_as = int(match[2])
@@ -472,9 +464,7 @@ class VyOSDriver(NetworkDriver):
 
         # delete the header and empty element
         bgp_info = [i.strip() for i in output[9:-2] if i]
-        logger.warning("Got BGP information")
-        logger.warning("STRIPPING:")
-        logger.warning(bgp_info)
+
         for i in bgp_info:
             if len(i) > 0:
                 values = i.split()
@@ -490,8 +480,6 @@ class VyOSDriver(NetworkDriver):
                     up_time,
                     state_prefix,
                 ) = values[:10]
-
-                logger.warning("PEER ID: %s" % peer_id)
 
                 is_enabled = "(Admin)" not in state_prefix
 
@@ -512,8 +500,6 @@ class VyOSDriver(NetworkDriver):
                     address_family = "ipv6"
                 else:
                     raise ValueError("BGP neighbor parsing failed")
-
-                logger.warning("SHOW IP BGP NEIGHBORS %s" % peer_id)
 
                 """
                 'show ip bgp neighbors 192.168.1.1' output example:
@@ -560,8 +546,7 @@ class VyOSDriver(NetworkDriver):
                 }
                 peer_dict["address_family"] = af_dict
                 bgp_neighbor_data["global"]["peers"][peer_id] = peer_dict
-        logger.warning("Returning BGP data")
-        logger.warning(bgp_neighbor_data)
+
         return bgp_neighbor_data
 
     import re
