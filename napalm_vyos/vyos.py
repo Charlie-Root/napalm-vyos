@@ -22,9 +22,12 @@ Read napalm.readthedocs.org for more information.
 import os
 import re
 import tempfile
-
 import textfsm
 import vyattaconfparser
+
+import logging
+logger = logging.getLogger("peering.manager.peering")
+
 from django.core.cache import cache
 
 cache.clear()

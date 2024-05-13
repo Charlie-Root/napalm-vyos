@@ -1,0 +1,25 @@
+Value Filldown BGP_ROUTER_ID (\S+)
+Value Filldown LOCAL_AS (\d+)
+Value Filldown VRF_ID (\d+)
+Value Required NEIGHBOR (\S+)
+Value Required NEIGHBOR_AS (\d+)
+Value Required MSG_RECEIVED (\d+)
+Value Required MSG_SENT (\d+)
+Value Required TABLE_VERSION (\d+)
+Value Required IN_Q (\d+)
+Value Required OUT_Q (\d+)
+Value Required UP_TIME (\S+)
+Value Required STATE_PREFIX_RECEIVED (.*?)
+Value Required PREFIX_SENT (\d+)
+Value Required DESCRIPTION (.+)
+
+Start
+  ^BGP router identifier ${BGP_ROUTER_ID}, local AS number ${LOCAL_AS} vrf-id ${VRF_ID} -> Neighbors
+
+Neighbors
+  ^Neighbor\s+V\s+AS\s+MsgRcvd\s+MsgSent\s+TblVer\s+InQ\s+OutQ\s+Up/Down\s+State/PfxRcd\s+PfxSnt\s+Desc -> PeerLine
+
+PeerLine
+  ^\s*$$ -> Start
+  ^${NEIGHBOR}\s+\d+\s+${NEIGHBOR_AS}\s+${MSG_RECEIVED}\s+${MSG_SENT}\s+${TABLE_VERSION}\s+${IN_Q}\s+${OUT_Q}\s+${UP_TIME}\s+${STATE_PREFIX_RECEIVED}\s+${PREFIX_SENT}\s+${DESCRIPTION} -> Record PeerLine
+  ^. -> Start
