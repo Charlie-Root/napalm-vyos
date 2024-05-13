@@ -22,10 +22,12 @@ Read napalm.readthedocs.org for more information.
 import os
 import re
 import tempfile
-import logging
 import textfsm
 import vyattaconfparser
+
+import logging
 logger = logging.getLogger("peering.manager.peering")
+
 from django.core.cache import cache
 
 cache.clear()
@@ -459,34 +461,23 @@ class VyOSDriver(NetworkDriver):
         """
 
         output = self.device.send_command("show ip bgp summary")
-        logger.warning("BGP summary output: %s" % output)
+
         current_dir = os.path.dirname(os.path.abspath(__file__))
         template_path = os.path.join(current_dir, "templates", "bgp_sum.template")
 
-        # Assuming you've got a TextFSM template ready to parse the `bgp_sum` output
+        # Assuming you've got a TextFSM template ready to parse the `bgp_detail` output
         with open(template_path) as template_file:
-            logger.warning("Checking template file")
             fsm = textfsm.TextFSM(template_file)
             header = fsm.header
             result = fsm.ParseText(output)
-        
-        logger.warning("GOT RESULT:")
-        logger.warning(result)
 
         bgp_neighbor_data = {"global": {"router_id": "", "peers": {}}}
-        #return bgp_neighbor_data
-    
-        try:
-            bgp_neighbor_data["global"]["router_id"] = result[0][
+
+        bgp_neighbor_data["global"]["router_id"] = result[0][
             header.index("BGP_ROUTER_ID")
         ]
-        except Exception as e:
-            logger.error("Error parsing BGP router ID: %s" % e)
-            logger.error(result)
-            pass
 
         for neighbor in result:
-            logger.warning("Parsing BGP neighbor %s" % neighbor)
             peer_id = neighbor[header.index("NEIGHBOR")]
             bgp_neighbor_data["global"]["peers"][peer_id] = []
 
@@ -502,7 +493,6 @@ class VyOSDriver(NetworkDriver):
                     self._bgp_time_conversion(neighbor[header.index("UP_TIME")])
                 ),
                 "remote_as": int(neighbor[header.index("NEIGHBOR_AS")]),
-                "prefixes_sent": int(neighbor[header.index("PREFIX_SENT")]),
             }
 
             bgp_neighbor_data["global"]["peers"][peer_id] = peer_dict
@@ -518,21 +508,17 @@ class VyOSDriver(NetworkDriver):
                 return default
 
         neighbors = self.get_bgp_neighbors()
-        logging.warning(neighbors)
-        bgp_neighbor_data = {"global": {}}
 
-        for neighbor_id, peer_dict in neighbors["global"]["peers"].items():
-            if neighbor_address and neighbor_address != neighbor_id:
-                logger.warning("Neighbor address has been specificly set")
-                continue
-            logger.warning("Parsing BGP neighbor details %s" % neighbor_id)
+        for neighbor in neighbors["global"]["peers"]:
 
-            output = self.device.send_command(f"show ip bgp neighbor {neighbor_id}")
+            output = self.device.send_command(f"show ip bgp neighbor {neighbor}")
 
             current_dir = os.path.dirname(os.path.abspath(__file__))
             template_path = os.path.join(
                 current_dir, "templates", "bgp_details.template"
             )
+
+            bgp_neighbor_data = {"global": {}}
 
             with open(template_path) as template_file:
                 fsm = textfsm.TextFSM(template_file)
@@ -546,18 +532,11 @@ class VyOSDriver(NetworkDriver):
                 ]
 
                 for neighbor in neighbors_dicts:
-                    logging.warning(f"Peer ID: {neighbor_id}, Is Enabled: {peer_dict['is_enabled']}")
-                    #logger.warning("Parsing BGP neighbor details %s" % neighbor)
+
                     remote_as = neighbor["REMOTE_AS"]
-                    logger.warning("Remote AS: %s" % remote_as)
-                    logger.warning("BGP State: %s" % neighbor["BGP_STATE"])
-                    status =  "disabled" if neighbor["BGP_STATE"].lower() == "idle" else "enabled",
-                    logger.warning("Status: %s" % status)
 
                     peer_dict = {
                         "up": neighbor["BGP_STATE"].lower() == "established",
-                        "is_enabled": neighbor["BGP_STATE"].lower() == "established",
-                        "status": "disabled" if neighbor["BGP_STATE"].lower() == "idle" else "enabled",
                         "local_as": int(neighbor["LOCAL_AS"]),
                         "remote_as": int(neighbor["REMOTE_AS"]),
                         "router_id": neighbor["LOCAL_ROUTER_ID"],
@@ -571,7 +550,7 @@ class VyOSDriver(NetworkDriver):
                             if neighbor["LOCAL_PORT"].isdigit()
                             else None
                         ),
-                        "remote_address": neighbor["NEIGHBOR"],
+                        "remote_address": neighbor["REMOTE_ROUTER_ID"],
                         "remote_port": neighbor["FOREIGN_PORT"],
                         "multipath": neighbor.get(
                             "DYNAMIC_CAPABILITY", "no"
@@ -600,7 +579,7 @@ class VyOSDriver(NetworkDriver):
                         "output_updates": safe_int(
                             neighbor.get("ADVERTISED_PREFIX_COUNT")
                         ),
-                        "connection_state": neighbor["BGP_STATE"].replace(",", "").lower(),
+                        "connection_state": neighbor["BGP_STATE"].lower(),
                         "bgp_state": neighbor["BGP_STATE"].lower(),
                         "previous_connection_state": neighbor.get(
                             "LAST_RESET_REASON", "unknown"
@@ -630,7 +609,7 @@ class VyOSDriver(NetworkDriver):
                             neighbor.get("SUPPRESSED_PREFIX_COUNT", 0)
                         ),  # Assuming SUPPRESSED_PREFIX_COUNT is available
                         "advertised_prefix_count": int(
-                            peer_dict['prefixes_sent']
+                            neighbor.get("ADVERTISED_PREFIX_COUNT", 0)
                         ),
                         "received_prefix_count": safe_int(
                             neighbor.get("RECEIVED_PREFIXES_IPV4", 0)
@@ -641,14 +620,11 @@ class VyOSDriver(NetworkDriver):
                         ),  # Assuming FLAP_COUNT is available
                     }
 
-                    
-
-                    bgp_neighbor_data["global"].setdefault(neighbor["NEIGHBOR"], []).append(
+                    bgp_neighbor_data["global"].setdefault(int(remote_as), []).append(
                         peer_dict
                     )
 
-        logger.warning("Returning FULL DICT: %s" % bgp_neighbor_data)
-        return bgp_neighbor_data
+            return bgp_neighbor_data
 
     def _bgp_time_conversion(self, bgp_uptime):
         if "never" in bgp_uptime:
