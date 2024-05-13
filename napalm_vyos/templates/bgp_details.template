@@ -1,0 +1,146 @@
+Value NEIGHBOR (\S+)
+Value REMOTE_AS (\d+)
+Value LOCAL_AS (\d+)
+Value LINK_TYPE (\w+ link)
+Value LOCAL_ROLE (.+)
+Value REMOTE_ROLE (.+)
+Value DESCRIPTION (.+)
+Value PEER_GROUP (\S+)
+Value BGP_VERSION (\d+)
+Value REMOTE_ROUTER_ID (\S+)
+Value LOCAL_ROUTER_ID (\S+)
+Value BGP_STATE (\S+)
+Value UP_TIME (\S+)
+Value HOLD_TIME (\d+)
+Value KEEPALIVE_INTERVAL (\d+)
+Value CONFIGURED_HOLD_TIME (\d+)
+Value CONFIGURED_KEEPALIVE_INTERVAL (\d+)
+Value CONFIGURED_CONDITIONAL_ADVERTISEMENTS_INTERVAL (\d+)
+Value FOUR_BYTE_AS_CAPABILITY (\S+)
+Value EXTENDED_MESSAGE_CAPABILITY (\S+)
+Value IPV4_UNICAST_ADDPATH (\S+)
+Value IPV6_UNICAST_ADDPATH (\S+)
+Value DYNAMIC_CAPABILITY (\S+)
+Value LONG_LIVED_GRACEFUL_RESTART_CAPABILITY (\S+)
+Value ROUTE_REFRESH_CAPABILITY (\S+)
+Value ENHANCED_ROUTE_REFRESH_CAPABILITY (\S+)
+Value ADDRESS_FAMILY_IPV4_UNICAST_CAPABILITY (\S+)
+Value ADDRESS_FAMILY_IPV6_UNICAST_CAPABILITY (\S+)
+Value HOSTNAME_CAPABILITY (\S+)
+Value VERSION_CAPABILITY (\S+)
+Value GRACEFUL_RESTART_CAPABILITY (\S+)
+Value REMOTE_RESTART_TIME (\d+)
+Value END_OF_RIB_SEND_IPV4_UNICAST (\S+)
+Value END_OF_RIB_RECEIVED_IPV4_UNICAST (\S+)
+Value END_OF_RIB_SEND_IPV6_UNICAST (.*)
+Value END_OF_RIB_RECEIVED_IPV6_UNICAST (.*)
+Value LOCAL_GR_MODE (\S+)
+Value REMOTE_GR_MODE (\S+)
+Value R_BIT (\S+)
+Value N_BIT (\S+)
+Value CONFIGURED_RESTART_TIME (\d+)
+Value RECEIVED_RESTART_TIME (\d+)
+Value IPV4_UNICAST_F_BIT (\S+)
+Value IPV6_UNICAST_F_BIT (\S+)
+Value END_OF_RIB_SENT (\S+)
+Value END_OF_RIB_SENT_AFTER_UPDATE (\S+)
+Value END_OF_RIB_RECEIVED (\S+)
+Value CONFIGURED_STALE_PATH_TIME (\d+)
+Value MESSAGE_STATISTICS_INQ_DEPTH (\d+)
+Value MESSAGE_STATISTICS_OUTQ_DEPTH (\d+)
+Value List MESSAGE_STATISTICS_TYPE (\S+)
+Value List MESSAGE_STATISTICS_SENT (\d+)
+Value List MESSAGE_STATISTICS_RECEIVED (\d+)
+Value RECEIVED_PREFIXES_IPV4 (\d+)
+Value RECEIVED_PREFIXES_IPV6 (\d+)
+Value ESTABLISHED_CONNECTIONS (\d+)
+Value DROPPED_CONNECTIONS (\d+)
+Value LAST_RESET (\S+)
+Value LAST_RESET_REASON (.+)
+Value LOCAL_HOST (\S+)
+Value LOCAL_PORT (\d+)
+Value FOREIGN_HOST (\S+)
+Value FOREIGN_PORT (\d+)
+Value NEXTHOP (\S+)
+Value NEXTHOP_GLOBAL (\S+)
+Value NEXTHOP_LOCAL (\S+)
+Value BGP_CONNECTION_TYPE (\S+)
+Value BGP_CONNECT_RETRY_TIMER (\d+)
+Value ESTIMATED_RTT (\d+)
+
+Start
+  ^BGP neighbor is ${NEIGHBOR}, remote AS ${REMOTE_AS}, local AS ${LOCAL_AS}, ${LINK_TYPE} -> Neighbors
+
+Neighbors
+  ^\s*Local Role: ${LOCAL_ROLE} -> Continue
+  ^\s*Remote Role: ${REMOTE_ROLE} -> Continue
+  ^\s*Description: ${DESCRIPTION} -> Continue
+  ^\s*Member of peer-group ${PEER_GROUP} for session parameters -> Continue
+  ^\s*BGP version ${BGP_VERSION}, remote router ID ${REMOTE_ROUTER_ID}, local router ID ${LOCAL_ROUTER_ID} -> Continue
+  ^\s*BGP state = ${BGP_STATE}, up for ${UP_TIME} -> Continue
+  ^\s*BGP state = ${BGP_STATE} -> Continue
+  ^\s*Hold time is ${HOLD_TIME} seconds, keepalive interval is ${KEEPALIVE_INTERVAL} seconds -> Continue
+  ^\s*Configured hold time is ${CONFIGURED_HOLD_TIME} seconds, keepalive interval is ${CONFIGURED_KEEPALIVE_INTERVAL} seconds -> Continue
+  ^\s*Configured conditional advertisements interval is ${CONFIGURED_CONDITIONAL_ADVERTISEMENTS_INTERVAL} seconds -> Capabilities
+
+Capabilities
+  ^\s*4 Byte AS: ${FOUR_BYTE_AS_CAPABILITY} -> Continue
+  ^\s*Extended Message: ${EXTENDED_MESSAGE_CAPABILITY} -> Continue
+  ^\s*AddPath: -> AddPath
+  ^\s*Dynamic: ${DYNAMIC_CAPABILITY} -> Continue
+  ^\s*Long-lived Graceful Restart: ${LONG_LIVED_GRACEFUL_RESTART_CAPABILITY} -> Continue
+  ^\s*Route refresh: ${ROUTE_REFRESH_CAPABILITY} -> Continue
+  ^\s*Enhanced Route Refresh: ${ENHANCED_ROUTE_REFRESH_CAPABILITY} -> Continue
+  ^\s*Address Family IPv4 Unicast: ${ADDRESS_FAMILY_IPV4_UNICAST_CAPABILITY} -> Continue
+  ^\s*Address Family IPv6 Unicast: ${ADDRESS_FAMILY_IPV6_UNICAST_CAPABILITY} -> Continue
+  ^\s*Hostname Capability: ${HOSTNAME_CAPABILITY} -> Continue
+  ^\s*Version Capability: ${VERSION_CAPABILITY} -> Continue
+  ^\s*Graceful Restart Capability: ${GRACEFUL_RESTART_CAPABILITY} -> GR
+
+AddPath
+  ^\s*IPv4 Unicast: ${IPV4_UNICAST_ADDPATH} -> Capabilities
+  ^\s*IPv6 Unicast: ${IPV6_UNICAST_ADDPATH} -> Capabilities
+
+GR
+  ^\s*Remote Restart timer is ${REMOTE_RESTART_TIME} seconds -> Continue
+  ^\s*End-of-RIB send: ${END_OF_RIB_SEND_IPV4_UNICAST} -> Continue
+  ^\s*End-of-RIB received: ${END_OF_RIB_RECEIVED_IPV4_UNICAST} -> Continue
+  ^\s*End-of-RIB send: ${END_OF_RIB_SEND_IPV6_UNICAST} -> Continue
+  ^\s*End-of-RIB received: ${END_OF_RIB_RECEIVED_IPV6_UNICAST} -> Continue
+  ^\s*Local GR Mode: ${LOCAL_GR_MODE} -> Continue
+  ^\s*Remote GR Mode: ${REMOTE_GR_MODE} -> Continue
+  ^\s*R bit: ${R_BIT} -> Continue
+  ^\s*N bit: ${N_BIT} -> Timers
+
+Timers
+  ^\s*Configured Restart Time\(sec\): ${CONFIGURED_RESTART_TIME} -> Continue
+  ^\s*Received Restart Time\(sec\): ${RECEIVED_RESTART_TIME} -> Statistics
+
+Statistics
+  ^\s*Message statistics: -> Continue
+  ^\s*Inq depth is ${MESSAGE_STATISTICS_INQ_DEPTH} -> Continue
+  ^\s*Outq depth is ${MESSAGE_STATISTICS_OUTQ_DEPTH} -> Continue
+  ^\s*${MESSAGE_STATISTICS_TYPE}:\s+${MESSAGE_STATISTICS_SENT}\s+${MESSAGE_STATISTICS_RECEIVED} -> AFI
+
+AFI
+  ^\s*For address family: IPv4 Unicast -> AFI_IPv4
+  ^\s*For address family: IPv6 Unicast -> AFI_IPv6
+
+AFI_IPv4
+  ^\s*ROUTESERVERS_V4 peer-group member -> Continue
+  ^\s*${RECEIVED_PREFIXES_IPV4} accepted prefixes -> ConnectionDetails
+
+AFI_IPv6
+  ^\s*${RECEIVED_PREFIXES_IPV6} accepted prefixes -> ConnectionDetails
+
+ConnectionDetails
+  ^\s*Connections established ${ESTABLISHED_CONNECTIONS}; dropped ${DROPPED_CONNECTIONS} -> Continue
+  ^\s*Last reset ${LAST_RESET},\s+${LAST_RESET_REASON} -> Continue
+  ^\s*Local host: ${LOCAL_HOST}, Local port: ${LOCAL_PORT} -> Continue
+  ^\s*Foreign host: ${FOREIGN_HOST}, Foreign port: ${FOREIGN_PORT} -> Continue
+  ^\s*Nexthop: ${NEXTHOP} -> Continue
+  ^\s*Nexthop global: ${NEXTHOP_GLOBAL} -> Continue
+  ^\s*Nexthop local: ${NEXTHOP_LOCAL} -> Continue
+  ^\s*BGP connection: ${BGP_CONNECTION_TYPE} -> Continue
+  ^\s*BGP Connect Retry Timer in Seconds: ${BGP_CONNECT_RETRY_TIMER} -> Continue
+  ^\s*Estimated round trip time: ${ESTIMATED_RTT} ms -> Record
