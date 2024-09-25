@@ -531,92 +531,95 @@ class VyOSDriver(NetworkDriver):
                     dict(zip(fsm.header, neighbor)) for neighbor in result
                 ]
 
-                for neighbor in neighbors_dicts:
+                logger.error(f"Size of neighbors_dicts is " + len(neighbors_dicts))
 
-                    remote_as = neighbor["REMOTE_AS"]
+                for neighbor_detail in neighbors_dicts:
+
+                    remote_as = neighbor_detail["REMOTE_AS"]
+                    logger.error(f"Parsing AS {remote_as} for neighbor {neighbor}")
 
                     peer_dict = {
-                        "up": neighbor["BGP_STATE"].lower() == "established",
-                        "local_as": int(neighbor["LOCAL_AS"]),
-                        "remote_as": int(neighbor["REMOTE_AS"]),
-                        "router_id": neighbor["LOCAL_ROUTER_ID"],
-                        "local_address": neighbor[
+                        "up": neighbor_detail["BGP_STATE"].lower() == "established",
+                        "local_as": int(neighbor_detail["LOCAL_AS"]),
+                        "remote_as": int(neighbor_detail["REMOTE_AS"]),
+                        "router_id": neighbor_detail["LOCAL_ROUTER_ID"],
+                        "local_address": neighbor_detail[
                             "LOCAL_ROUTER_ID"
                         ],  # Adjusted from LOCAL_ROUTER_ID based on context
-                        "routing_table": f"IPv{neighbor['BGP_VERSION']} Unicast",  # Constructed value
-                        "local_address_configured": bool(neighbor["LOCAL_ROUTER_ID"]),
+                        "routing_table": f"IPv{neighbor_detail['BGP_VERSION']} Unicast",  # Constructed value
+                        "local_address_configured": bool(neighbor_detail["LOCAL_ROUTER_ID"]),
                         "local_port": (
-                            int(neighbor["LOCAL_PORT"])
-                            if neighbor["LOCAL_PORT"].isdigit()
+                            int(neighbor_detail["LOCAL_PORT"])
+                            if neighbor_detail["LOCAL_PORT"].isdigit()
                             else None
                         ),
-                        "remote_address": neighbor["REMOTE_ROUTER_ID"],
-                        "remote_port": neighbor["FOREIGN_PORT"],
-                        "multipath": neighbor.get(
+                        "remote_address": neighbor_detail["REMOTE_ROUTER_ID"],
+                        "remote_port": neighbor_detail["FOREIGN_PORT"],
+                        "multipath": neighbor_detail.get(
                             "DYNAMIC_CAPABILITY", "no"
                         ),  # Assuming DYNAMIC_CAPABILITY indicates multipath
                         "remove_private_as": (
                             "yes"
-                            if neighbor.get("REMOVE_PRIVATE_AS", "no") != "no"
+                            if neighbor_detail.get("REMOVE_PRIVATE_AS", "no") != "no"
                             else "no"
                         ),  # Placeholder for actual value
                         "input_messages": sum(
-                            int(neighbor["MESSAGE_STATISTICS_RECEIVED"][i])
-                            for i in range(len(neighbor["MESSAGE_STATISTICS_TYPE"]))
-                            if neighbor["MESSAGE_STATISTICS_TYPE"][i]
+                            int(neighbor_detail["MESSAGE_STATISTICS_RECEIVED"][i])
+                            for i in range(len(neighbor_detail["MESSAGE_STATISTICS_TYPE"]))
+                            if neighbor_detail["MESSAGE_STATISTICS_TYPE"][i]
                             in ["Updates", "Keepalives"]
                         ),
                         "output_messages": sum(
-                            int(neighbor["MESSAGE_STATISTICS_SENT"][i])
-                            for i in range(len(neighbor["MESSAGE_STATISTICS_TYPE"]))
-                            if neighbor["MESSAGE_STATISTICS_TYPE"][i]
+                            int(neighbor_detail["MESSAGE_STATISTICS_SENT"][i])
+                            for i in range(len(neighbor_detail["MESSAGE_STATISTICS_TYPE"]))
+                            if neighbor_detail["MESSAGE_STATISTICS_TYPE"][i]
                             in ["Updates", "Keepalives"]
                         ),
                         "input_updates": safe_int(
-                            neighbor.get("RECEIVED_PREFIXES_IPV4")
+                            neighbor_detail.get("RECEIVED_PREFIXES_IPV4")
                         )
-                        + safe_int(neighbor.get("RECEIVED_PREFIXES_IPV6")),
+                        + safe_int(neighbor_detail.get("RECEIVED_PREFIXES_IPV6")),
                         "output_updates": safe_int(
-                            neighbor.get("ADVERTISED_PREFIX_COUNT")
+                            neighbor_detail.get("ADVERTISED_PREFIX_COUNT")
                         ),
-                        "connection_state": neighbor["BGP_STATE"].lower(),
-                        "bgp_state": neighbor["BGP_STATE"].lower(),
-                        "previous_connection_state": neighbor.get(
+                        "connection_state": neighbor_detail["BGP_STATE"].lower(),
+                        "bgp_state": neighbor_detail["BGP_STATE"].lower(),
+                        "previous_connection_state": neighbor_detail.get(
                             "LAST_RESET_REASON", "unknown"
                         ),
-                        "last_event": neighbor.get(
+                        "last_event": neighbor_detail.get(
                             "LAST_EVENT", "Not Available"
                         ),  # Assuming LAST_EVENT is available
-                        "suppress_4byte_as": neighbor.get(
+                        "suppress_4byte_as": neighbor_detail.get(
                             "FOUR_BYTE_AS_CAPABILITY", "Not Configured"
                         ),
-                        "local_as_prepend": neighbor.get(
+                        "local_as_prepend": neighbor_detail.get(
                             "LOCAL_AS_PREPEND", "Not Configured"
                         ),  # Assuming LOCAL_AS_PREPEND is available
-                        "holdtime": int(neighbor["HOLD_TIME"]),
-                        "configured_holdtime": int(neighbor["CONFIGURED_HOLD_TIME"]),
-                        "keepalive": int(neighbor["KEEPALIVE_INTERVAL"]),
+                        "holdtime": int(neighbor_detail["HOLD_TIME"]),
+                        "configured_holdtime": int(neighbor_detail["CONFIGURED_HOLD_TIME"]),
+                        "keepalive": int(neighbor_detail["KEEPALIVE_INTERVAL"]),
                         "configured_keepalive": int(
-                            neighbor["CONFIGURED_KEEPALIVE_INTERVAL"]
+                            neighbor_detail["CONFIGURED_KEEPALIVE_INTERVAL"]
                         ),
                         "active_prefix_count": int(
-                            neighbor.get("ACTIVE_PREFIX_COUNT", 0)
+                            neighbor_detail.get("ACTIVE_PREFIX_COUNT", 0)
                         ),  # Assuming ACTIVE_PREFIX_COUNT is available
                         "accepted_prefix_count": int(
-                            neighbor.get("ACCEPTED_PREFIX_COUNT", 0)
+                            neighbor_detail.get("ACCEPTED_PREFIX_COUNT", 0)
                         ),  # Assuming ACCEPTED_PREFIX_COUNT is available
                         "suppressed_prefix_count": int(
-                            neighbor.get("SUPPRESSED_PREFIX_COUNT", 0)
+                            neighbor_detail.get("SUPPRESSED_PREFIX_COUNT", 0)
                         ),  # Assuming SUPPRESSED_PREFIX_COUNT is available
                         "advertised_prefix_count": int(
-                            neighbor.get("ADVERTISED_PREFIX_COUNT", 0)
+                            neighbor_detail.get("ADVERTISED_PREFIX_COUNT", 0)
                         ),
                         "received_prefix_count": safe_int(
-                            neighbor.get("RECEIVED_PREFIXES_IPV4", 0)
+                            neighbor_detail.get("RECEIVED_PREFIXES_IPV4", 0)
                         )
-                        + safe_int(neighbor.get("RECEIVED_PREFIXES_IPV6", 0)),
+                        + safe_int(neighbor_detail.get("RECEIVED_PREFIXES_IPV6", 0)),
                         "flap_count": safe_int(
-                            neighbor.get("FLAP_COUNT", 0)
+                            neighbor_detail.get("FLAP_COUNT", 0)
                         ),  # Assuming FLAP_COUNT is available
                     }
 
