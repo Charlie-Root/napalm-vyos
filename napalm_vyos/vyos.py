@@ -507,6 +507,8 @@ class VyOSDriver(NetworkDriver):
             except ValueError:
                 return default
 
+        bgp_neighbor_data = {"global": {}}
+
         neighbors = self.get_bgp_neighbors()
 
         for neighbor in neighbors["global"]["peers"]:
@@ -517,8 +519,6 @@ class VyOSDriver(NetworkDriver):
             template_path = os.path.join(
                 current_dir, "templates", "bgp_details.template"
             )
-
-            bgp_neighbor_data = {"global": {}}
 
             with open(template_path) as template_file:
                 fsm = textfsm.TextFSM(template_file)
@@ -531,12 +531,10 @@ class VyOSDriver(NetworkDriver):
                     dict(zip(fsm.header, neighbor)) for neighbor in result
                 ]
 
-                logger.error(f"Size of neighbors_dicts is " + len(neighbors_dicts))
-
                 for neighbor_detail in neighbors_dicts:
 
                     remote_as = neighbor_detail["REMOTE_AS"]
-                    logger.error(f"Parsing AS {remote_as} for neighbor {neighbor}")
+                    logger.debug(f"Parsing AS {remote_as} for neighbor {neighbor}")
 
                     peer_dict = {
                         "up": neighbor_detail["BGP_STATE"].lower() == "established",
@@ -553,7 +551,7 @@ class VyOSDriver(NetworkDriver):
                             if neighbor_detail["LOCAL_PORT"].isdigit()
                             else None
                         ),
-                        "remote_address": neighbor_detail["REMOTE_ROUTER_ID"],
+                        "remote_address": neighbor,
                         "remote_port": neighbor_detail["FOREIGN_PORT"],
                         "multipath": neighbor_detail.get(
                             "DYNAMIC_CAPABILITY", "no"
@@ -582,8 +580,8 @@ class VyOSDriver(NetworkDriver):
                         "output_updates": safe_int(
                             neighbor_detail.get("ADVERTISED_PREFIX_COUNT")
                         ),
-                        "connection_state": neighbor_detail["BGP_STATE"].lower(),
-                        "bgp_state": neighbor_detail["BGP_STATE"].lower(),
+                        "connection_state": neighbor_detail["BGP_STATE"].lower().strip(','),
+                        "bgp_state": neighbor_detail["BGP_STATE"].lower().strip(','),
                         "previous_connection_state": neighbor_detail.get(
                             "LAST_RESET_REASON", "unknown"
                         ),
@@ -626,8 +624,10 @@ class VyOSDriver(NetworkDriver):
                     bgp_neighbor_data["global"].setdefault(int(remote_as), []).append(
                         peer_dict
                     )
+                    logger.debug("Connection state: " + neighbor_detail["BGP_STATE"].lower().strip(','))
 
-            return bgp_neighbor_data
+
+        return bgp_neighbor_data
 
     def _bgp_time_conversion(self, bgp_uptime):
         if "never" in bgp_uptime:
