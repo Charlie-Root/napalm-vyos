@@ -1,0 +1,26 @@
+Value NEIGHBOR_IP (\S+)
+Value ADJ_IN (\d+)
+Value DAMPED (\d+)
+Value REMOVED (\d+)
+Value HISTORY (\d+)
+Value STALE (\d+)
+Value VALID (\d+)
+Value ALL_RIB (\d+)
+Value PFXCT_COUNTED (\d+)
+Value BEST_SELECTED (\d+)
+Value USEABLE (\d+)
+Value UNSORTED (\d+)
+
+Start
+  ^Prefix counts for ${NEIGHBOR_IP}, IPv[4,6] Unicast
+  ^\s*Adj-in:\s+${ADJ_IN}
+  ^\s*Damped:\s+${DAMPED}
+  ^\s*Removed:\s+${REMOVED}
+  ^\s*History:\s+${HISTORY}
+  ^\s*Stale:\s+${STALE}
+  ^\s*Valid:\s+${VALID}
+  ^\s*All RIB:\s+${ALL_RIB}
+  ^\s*PfxCt counted:\s+${PFXCT_COUNTED}
+  ^\s*PfxCt Best Selected:\s+${BEST_SELECTED}
+  ^\s*Useable:\s+${USEABLE}
+  ^\s*Unsorted:\s+${UNSORTED}
