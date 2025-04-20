@@ -460,7 +460,7 @@ class VyOSDriver(NetworkDriver):
         192.168.1.4     4 64522       0       0        0    0    0 never    Active
         """
 
-        output = self.device.send_command("show ip bgp summary")
+        output = self.device.send_command("show bgp summary")
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         template_path = os.path.join(current_dir, "templates", "bgp_sum.template")
@@ -513,7 +513,7 @@ class VyOSDriver(NetworkDriver):
 
         for neighbor in neighbors["global"]["peers"]:
 
-            output = self.device.send_command(f"show ip bgp neighbor {neighbor}")
+            output = self.device.send_command(f"show bgp neighbor {neighbor}")
 
             current_dir = os.path.dirname(os.path.abspath(__file__))
             template_path = os.path.join(
@@ -542,7 +542,7 @@ class VyOSDriver(NetworkDriver):
                         "remote_as": int(neighbor_detail["REMOTE_AS"]),
                         "router_id": neighbor_detail["LOCAL_ROUTER_ID"],
                         "local_address": neighbor_detail[
-                            "LOCAL_ROUTER_ID"
+                            "LOCAL_HOST"
                         ],  # Adjusted from LOCAL_ROUTER_ID based on context
                         "routing_table": f"IPv{neighbor_detail['BGP_VERSION']} Unicast",  # Constructed value
                         "local_address_configured": bool(neighbor_detail["LOCAL_ROUTER_ID"]),
