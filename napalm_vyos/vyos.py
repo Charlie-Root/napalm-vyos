@@ -499,6 +499,26 @@ class VyOSDriver(NetworkDriver):
 
         return bgp_neighbor_data
 
+    def get_bgp_neighbor_prefix_counts(self, neighbor_address):
+        output = self.device.send_command(f"show bgp {self._get_ip_version(neighbor_address)} neighbor {neighbor_address} prefix-counts")
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        template_path = os.path.join(
+            current_dir, "templates", "bgp_prefix_counts.template"
+        )
+
+        with open(template_path) as template_file:
+            fsm = textfsm.TextFSM(template_file)
+            result = fsm.ParseText(output)
+
+            if not result:
+                return {}
+
+            neighbor_dict = dict(zip(fsm.header, result[0]))
+            
+
+        return neighbor_dict
+
     def get_bgp_neighbors_detail(self, neighbor_address=""):
 
         def safe_int(value, default=0):
@@ -512,13 +532,15 @@ class VyOSDriver(NetworkDriver):
         neighbors = self.get_bgp_neighbors()
 
         for neighbor in neighbors["global"]["peers"]:
-
-            output = self.device.send_command(f"show ip bgp neighbor {neighbor}")
+            neighbor_obj = neighbors["global"]["peers"].get(neighbor)
+            output = self.device.send_command(f"show bgp {self._get_ip_version(neighbor)} neighbor {neighbor}")
 
             current_dir = os.path.dirname(os.path.abspath(__file__))
             template_path = os.path.join(
                 current_dir, "templates", "bgp_details.template"
             )
+
+            neighbor_prefix_counts = self.get_bgp_neighbor_prefix_counts(neighbor)
 
             with open(template_path) as template_file:
                 fsm = textfsm.TextFSM(template_file)
@@ -542,7 +564,7 @@ class VyOSDriver(NetworkDriver):
                         "remote_as": int(neighbor_detail["REMOTE_AS"]),
                         "router_id": neighbor_detail["LOCAL_ROUTER_ID"],
                         "local_address": neighbor_detail[
-                            "LOCAL_ROUTER_ID"
+                            "LOCAL_HOST"
                         ],  # Adjusted from LOCAL_ROUTER_ID based on context
                         "routing_table": f"IPv{neighbor_detail['BGP_VERSION']} Unicast",  # Constructed value
                         "local_address_configured": bool(neighbor_detail["LOCAL_ROUTER_ID"]),
@@ -601,16 +623,16 @@ class VyOSDriver(NetworkDriver):
                             neighbor_detail["CONFIGURED_KEEPALIVE_INTERVAL"]
                         ),
                         "active_prefix_count": int(
-                            neighbor_detail.get("ACTIVE_PREFIX_COUNT", 0)
+                            neighbor_prefix_counts.get("BEST_SELECTED", 0)
                         ),  # Assuming ACTIVE_PREFIX_COUNT is available
                         "accepted_prefix_count": int(
-                            neighbor_detail.get("ACCEPTED_PREFIX_COUNT", 0)
+                            neighbor_prefix_counts.get("USEABLE", 0)
                         ),  # Assuming ACCEPTED_PREFIX_COUNT is available
                         "suppressed_prefix_count": int(
-                            neighbor_detail.get("SUPPRESSED_PREFIX_COUNT", 0)
+                            neighbor_prefix_counts.get("REMOVED", 0)
                         ),  # Assuming SUPPRESSED_PREFIX_COUNT is available
                         "advertised_prefix_count": int(
-                            neighbor_detail.get("ADVERTISED_PREFIX_COUNT", 0)
+                            neighbor_obj.get("advertised_prefix_count", 0)
                         ),
                         "received_prefix_count": safe_int(
                             neighbor_detail.get("RECEIVED_PREFIXES_IPV4", 0)
