@@ -24,14 +24,15 @@ import re
 import tempfile
 import textfsm
 import vyattaconfparser
+try:
+    import logging
+    logger = logging.getLogger("peering.manager.peering")
 
-import logging
-logger = logging.getLogger("peering.manager.peering")
+    from django.core.cache import cache
 
-from django.core.cache import cache
-
-cache.clear()
-
+    cache.clear()
+except Exception:
+    pass
 # NAPALM base
 import napalm.base.constants as C
 from napalm.base.base import NetworkDriver
