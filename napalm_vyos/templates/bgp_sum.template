@@ -17,6 +17,7 @@ Start
   ^BGP router identifier ${BGP_ROUTER_ID}, local AS number ${LOCAL_AS} .* vrf-id ${VRF_ID} -> Neighbors
 
 Neighbors
+  ^IPv[46] Unicast Summary -> Continue
   ^Neighbor\s+V\s+AS\s+MsgRcvd\s+MsgSent\s+TblVer\s+InQ\s+OutQ\s+Up/Down\s+State/PfxRcd\s+PfxSnt\s+Desc -> PeerLine
 
 PeerLine
