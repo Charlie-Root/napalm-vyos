@@ -727,7 +727,7 @@ class VyOSDriver(NetworkDriver):
                 rx_discards = i[3]
                 rx_octets = i[0]
                 rx_unicast_packets = i[1]
-                rx_multi cast_packets = i[5]
+                rx_multicast_packets = i[5]
                 rx_broadcast_packets = -1
             else:
                 counters[interfaces[j // 2]] = {
