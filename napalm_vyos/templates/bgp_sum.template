@@ -11,7 +11,7 @@ Value Required OUT_Q (\d+)
 Value Required UP_TIME (\S+)
 Value Required STATE_PREFIX_RECEIVED (.*?)
 Value Required PREFIX_SENT (\d+)
-Value Required DESCRIPTION (.+)
+Value Required DESCRIPTION (.*)
 
 Start
   ^BGP router identifier ${BGP_ROUTER_ID}, local AS number ${LOCAL_AS} .* vrf-id ${VRF_ID} -> Neighbors
